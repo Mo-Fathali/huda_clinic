@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================
+// بيانات الدكتورة (سجل واحد)
+// ============================
+model DoctorProfile {
+  id        String   @id @default(cuid())
+  name      String
+  title     String
+  bio       String
+  imageUrl  String?
+  phone     String
+  whatsapp  String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================
+// الخدمات
+// ============================
+model Service {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  duration     Int           // بالدقائق
+  price        Decimal
+  isActive     Boolean       @default(true)
+  order        Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  appointments Appointment[]
+}
+
+// ============================
+// الزباين
+// ============================
+model Patient {
+  id            String        @id @default(cuid())
+  phone         String        @unique
+  name          String
+  noShowCount   Int           @default(0)
+  isBlacklisted Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  otps          Otp[]
+  appointments  Appointment[]
+  
+  medicalRecord MedicalRecord?
+
+}
+
+// ============================
+// تحقق OTP
+// ============================
+model Otp {
+  id         String   @id @default(cuid())
+  phone      String
+  code       String
+  expiresAt  DateTime
+  verified   Boolean  @default(false)
+  attempts   Int      @default(0)
+  lastSentAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  patient   Patient? @relation(fields: [patientId], references: [id])
+  patientId String?
+}
+
+// ============================
+// الحجوزات
+// ============================
+model Appointment {
+  id            String    @id @default(cuid())
+
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  patientId     String
+
+  service       Service   @relation(fields: [serviceId], references: [id])
+  serviceId     String
+
+  date          DateTime
+  startTime     String
+  endTime       String
+
+  status        String    @default("pending") // pending | confirmed | cancelled | completed
+  otpVerified   Boolean   @default(false)
+  expiresAt     DateTime?
+
+  notes         String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  notifications NotificationLog[]
+
+  @@unique([serviceId, date, startTime], name: "uniqueSlot")
+}
+
+// ============================
+// سجل الإشعارات
+// ============================
+model NotificationLog {
+  id            String      @id @default(cuid())
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  appointmentId String
+
+  type          String      // reschedule | cancel | confirm | reminder
+  channel       String      // sms | whatsapp
+  status        String      // sent | failed
+
+  sentAt        DateTime    @default(now())
+}
+
+// ============================
+// جدول الدوام الأسبوعي
+// ============================
+model Availability {
+  id        String   @id @default(cuid())
+  dayOfWeek Int      // 0 = الأحد ... 6 = السبت
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  isActive  Boolean  @default(true)
+}
+
+// ============================
+// الحجب (إجازات/طوارئ)
+// ============================
+model BlockedSlot {
+  id        String    @id @default(cuid())
+  date      DateTime
+  startTime String?   // null = يوم كامل محجوب
+  endTime   String?
+  reason    String?
+  createdAt DateTime  @default(now())
+}
+model MedicalRecord {
+  id                  String   @id @default(cuid())
+
+  patient             Patient  @relation(fields: [patientId], references: [id])
+  patientId           String   @unique   // علاقة واحد لواحد — سجل وحيد لكل مريض
+
+  bloodType           String?
+  allergies           String?
+  chronicConditions   String?
+  currentMedications  String?
+  skinType             String?
+
+  historySummary      String?  @db.Text
+  proceduresSummary   String?  @db.Text
+  notes               String?  @db.Text
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // مشفرة (hashed) — أبداً نص عادي
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+}
