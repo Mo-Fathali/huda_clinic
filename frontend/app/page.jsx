@@ -5,7 +5,7 @@ import Footer from '@/components/landing/Footer';
 
 async function getProfile() {
   try {
-    const res = await fetch('http://localhost:5000/api/profile', { cache: 'no-store' });
+   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/profile`, { cache: 'no-store' });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -15,7 +15,7 @@ async function getProfile() {
 
 async function getServices() {
   try {
-    const res = await fetch('http://localhost:5000/api/services', { cache: 'no-store' });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/services`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch {
