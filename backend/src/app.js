@@ -18,7 +18,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o
 app.use(cors({
   origin: [
     'http://localhost:3000',
-    'https://powerful-love-production-f00a.up.railway.app',
+    'https://huda-clinic.up.railway.app',
   ],
   credentials: true,
 }));
