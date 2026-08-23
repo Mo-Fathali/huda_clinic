@@ -1,7 +1,10 @@
+
 import Header from '@/components/landing/Header';
 import Hero from '@/components/landing/Hero';
 import ServiceCard from '@/components/landing/ServiceCard';
 import Footer from '@/components/landing/Footer';
+
+export const runtime = 'edge';
 
 async function getProfile() {
   try {

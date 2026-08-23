@@ -6,6 +6,8 @@ import { api, withAuth } from '@/lib/api';
 import { getPatientToken, isPatientLoggedIn } from '@/lib/auth';
 import Toast from '@/components/ui/Toast';
 
+export const runtime = 'edge';
+
 const STATUS_LABELS = {
   pending: 'قيد الانتظار',
   confirmed: 'مؤكد',

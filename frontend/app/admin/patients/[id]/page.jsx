@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { api, withAuth } from '@/lib/api';
 import { getAdminToken } from '@/lib/auth';
 
+export const runtime = 'edge';
+
 const STATUS_LABELS = {
   pending: 'قيد الانتظار',
   confirmed: 'مؤكد',
