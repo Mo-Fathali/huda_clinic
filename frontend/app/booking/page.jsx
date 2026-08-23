@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api, withAuth } from '@/lib/api';
 import { savePatientSession } from '@/lib/auth';
@@ -10,7 +10,7 @@ import OtpInput from '@/components/booking/OtpInput';
 
 const STEPS = ['الخدمة', 'الموعد', 'التأكيد'];
 
-export default function BookingPage() {
+function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -155,5 +155,19 @@ export default function BookingPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-white flex items-center justify-center">
+          <p className="text-gray-400">جارِ التحميل...</p>
+        </main>
+      }
+    >
+      <BookingContent />
+    </Suspense>
   );
 }
