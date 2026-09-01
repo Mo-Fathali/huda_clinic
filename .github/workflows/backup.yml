@@ -2,8 +2,8 @@ name: نسخة احتياطية يومية
 
 on:
   schedule:
-    - cron: '0 22 * * *'  # كل يوم الساعة 10 مساءً UTC (~1 صباحًا بتوقيت ليبيا)
-  workflow_dispatch:  # يسمح بالتشغيل اليدوي من تبويب Actions لو احتجت تجربة فورية
+    - cron: '0 22 * * *'
+  workflow_dispatch:
 
 jobs:
   backup:
