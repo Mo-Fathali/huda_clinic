@@ -22,5 +22,8 @@ router.get('/appointments', appointmentsController.getAllAppointments);
 router.put('/appointments/:id', appointmentsController.updateAppointment);
 router.delete('/appointments/:id', appointmentsController.cancelAppointment);
 router.use('/patients', require('./patients.routes'));
+router.use('/invoices', require('./invoices.routes'));
+router.use('/suppliers', require('./suppliers.routes'));
+router.use('/finance', require('./finance.routes'));
 
 module.exports = router;

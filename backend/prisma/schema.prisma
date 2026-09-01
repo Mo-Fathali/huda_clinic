@@ -170,3 +170,38 @@ model AdminUser {
   role      String   @default("admin")
   createdAt DateTime @default(now())
 }
+model Invoice {
+  id            String   @id @default(cuid())
+  patientName   String
+  patientPhone  String?
+  description   String?
+  amount        Decimal
+  status        String   @default("paid") // paid | unpaid
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+model Supplier {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  products     String?  // وصف المنتجات/الخدمات اللي بيوردها
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions SupplierTransaction[]
+}
+
+model SupplierTransaction {
+  id          String   @id @default(cuid())
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  supplierId  String
+  amount      Decimal
+  type        String   // purchase (مشترى) | payment (دفعة)
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
