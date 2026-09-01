@@ -14,16 +14,11 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Check files
-        run: |
-          pwd
-          ls -la
-          ls -la scripts || true
-          find . -type f -name "backup.js"
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -32,6 +27,20 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+
+      - name: Check backup file
+        run: |
+          echo "CURRENT DIRECTORY:"
+          pwd
+
+          echo "BACKEND CONTENT:"
+          ls -la
+
+          echo "SCRIPTS CONTENT:"
+          ls -la scripts || true
+
+          echo "SEARCHING FOR backup.js:"
+          find /home/runner/work -type f -name "backup.js"
 
       - name: Run backup
         run: node scripts/backup.js
