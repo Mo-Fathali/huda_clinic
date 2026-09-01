@@ -114,8 +114,8 @@ export default function SupplierDetailPage() {
               value={txForm.type} onChange={(e) => setTxForm({ ...txForm, type: e.target.value })}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="purchase">مشترى</option>
-              <option value="payment">دفعة</option>
+              <option value="purchase">تم الشراء</option>
+              <option value="payment">تم الدفع</option>
             </select>
             <input
               type="text" placeholder="الوصف (اختياري)" value={txForm.description}
@@ -157,7 +157,7 @@ export default function SupplierDetailPage() {
                 <li key={tx.id} className="py-3 flex items-center justify-between text-sm">
                   <div>
                     <span className={`px-2 py-1 rounded-full text-xs ${tx.type === 'purchase' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                      {tx.type === 'purchase' ? 'مشترى' : 'دفعة'}
+                      {tx.type === 'purchase' ? 'تم الشراء' : 'تم الدفع'}
                     </span>
                     {tx.description && <span className="text-gray-500 mr-2">{tx.description}</span>}
                     <p className="text-gray-400 text-xs mt-1">{new Date(tx.date).toLocaleDateString('ar')}</p>
