@@ -1,4 +1,4 @@
-name: نسخة احتياطية يومية
+وname: نسخة احتياطية يومية
 
 on:
   schedule:
@@ -8,11 +8,24 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: backend
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: فحص الملفات
+        run: |
+          echo "المسار الحالي:"
+          pwd
+          echo "محتويات backend:"
+          ls -la
+          echo "محتويات scripts:"
+          ls -la scripts || true
+          echo "البحث عن backup.js:"
+          find . -type f -name "backup.js"
 
       - uses: actions/setup-node@v4
         with:
