@@ -50,7 +50,15 @@ export default function SupplierDetailPage() {
   if (loading) return <p className="text-gray-500">جارِ التحميل...</p>;
   if (!supplier) return <p className="text-red-600">المزود غير موجود</p>;
 
-  const totalAmount = supplier.transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const totalPurchases = supplier.transactions
+    .filter((tx) => tx.type === 'purchase')
+    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  const totalPayments = supplier.transactions
+    .filter((tx) => tx.type === 'payment')
+    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  const balance = totalPurchases - totalPayments;
 
   return (
     <div>
@@ -125,11 +133,21 @@ export default function SupplierDetailPage() {
           </form>
 
           <div className="bg-white rounded-xl border border-gray-100 p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <h2 className="font-semibold text-ink">سجل المعاملات</h2>
-              <span className="text-sm text-gray-500">
-                الإجمالي: <span className="font-bold text-rose">{totalAmount.toFixed(2)} د.ل</span>
-              </span>
+              <div className="flex gap-4 text-sm">
+                <span className="text-gray-500">
+                  المشتريات: <span className="font-medium text-ink">{totalPurchases.toFixed(2)} د.ل</span>
+                </span>
+                <span className="text-gray-500">
+                  المدفوع: <span className="font-medium text-green-600">{totalPayments.toFixed(2)} د.ل</span>
+                </span>
+                <span className="text-gray-500">
+                  المتبقي: <span className={`font-bold ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {balance.toFixed(2)} د.ل
+                  </span>
+                </span>
+              </div>
             </div>
             {supplier.transactions.length === 0 && (
               <p className="text-gray-500 text-sm text-center py-6">لا توجد معاملات بعد</p>
