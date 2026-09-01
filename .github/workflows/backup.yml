@@ -1,0 +1,33 @@
+name: نسخة احتياطية يومية
+
+on:
+  schedule:
+    - cron: '0 22 * * *'  # كل يوم الساعة 10 مساءً UTC (~1 صباحًا بتوقيت ليبيا)
+  workflow_dispatch:  # يسمح بالتشغيل اليدوي من تبويب Actions لو احتجت تجربة فورية
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: تثبيت الاعتماديات
+        run: npm ci
+
+      - name: توليد Prisma Client
+        run: npx prisma generate
+
+      - name: تشغيل النسخ الاحتياطي
+        run: node scripts/backup.js
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BACKUP_EMAIL: ${{ secrets.BACKUP_EMAIL }}
