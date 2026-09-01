@@ -1,4 +1,4 @@
-وname: نسخة احتياطية يومية
+name: Daily Backup
 
 on:
   schedule:
@@ -16,28 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: فحص الملفات
+      - name: Check files
         run: |
-          echo "المسار الحالي:"
           pwd
-          echo "محتويات backend:"
           ls -la
-          echo "محتويات scripts:"
           ls -la scripts || true
-          echo "البحث عن backup.js:"
           find . -type f -name "backup.js"
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: تثبيت الاعتماديات
+      - name: Install dependencies
         run: npm ci
 
-      - name: توليد Prisma Client
+      - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: تشغيل النسخ الاحتياطي
+      - name: Run backup
         run: node scripts/backup.js
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
