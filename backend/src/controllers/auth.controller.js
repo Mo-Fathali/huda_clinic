@@ -1,3 +1,5 @@
+// backend/src/controllers/auth.controller.js
+
 const jwt = require('jsonwebtoken');
 const otpService = require('../services/otp.service');
 const prisma = require('../config/db');
@@ -19,7 +21,7 @@ exports.sendOtp = async (req, res) => {
     const result = await otpService.sendOtp(phone);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(error.status || 400).json({ error: error.message });
   }
 };
 
@@ -51,6 +53,6 @@ exports.verifyOtp = async (req, res) => {
 
     res.json({ token, patient });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(error.status || 400).json({ error: error.message });
   }
 };
