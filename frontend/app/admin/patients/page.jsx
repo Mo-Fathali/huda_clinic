@@ -2,10 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { api, withAuth } from '@/lib/api';
 import { getAdminToken } from '@/lib/auth';
+import AddPatientModal from '@/components/admin/AddPatientModal';
 
 export default function AdminPatientsPage() {
+  const router = useRouter();
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -14,6 +17,10 @@ export default function AdminPatientsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addError, setAddError] = useState(null);
 
   function load() {
     setLoading(true);
@@ -89,12 +96,37 @@ export default function AdminPatientsPage() {
     }
   }
 
+  async function handleAddPatient({ name, phone }) {
+    setAddSubmitting(true);
+    setAddError(null);
+    const token = getAdminToken();
+
+    try {
+      const patient = await api.post('/api/admin/patients', { name, phone }, withAuth(token));
+      setAddModalOpen(false);
+      // تروح مباشرة لصفحة التفاصيل عشان تضيف السجل المرضي لو حابة (اختياري)
+      router.push(`/admin/patients/${patient.id}`);
+    } catch (err) {
+      setAddError(err.message);
+    } finally {
+      setAddSubmitting(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="text-xl font-bold text-ink">سجلات الحالات</h1>
 
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => { setAddError(null); setAddModalOpen(true); }}
+            className="bg-rose text-white text-sm px-4 py-2 rounded-lg hover:opacity-90 transition"
+          >
+            + إضافة حالة يدويًا
+          </button>
+
           <button
             type="button"
             onClick={handleExport}
@@ -107,7 +139,7 @@ export default function AdminPatientsPage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={importing}
-            className="bg-rose text-white text-sm px-4 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50"
+            className="bg-white border border-gray-300 text-ink text-sm px-4 py-2 rounded-lg hover:bg-soft transition disabled:opacity-50"
           >
             {importing ? 'جارِ الاستيراد...' : 'استيراد من Excel'}
           </button>
@@ -220,6 +252,14 @@ export default function AdminPatientsPage() {
       <p className="text-xs text-gray-400 mt-3">
         ملف الاستيراد يجب أن يحتوي على عمود "الهاتف" على الأقل — الأرقام الموجودة يتم تحديثها، والجديدة تُضاف.
       </p>
+
+      <AddPatientModal
+        open={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        onSubmit={handleAddPatient}
+        submitting={addSubmitting}
+        errorMessage={addError}
+      />
     </div>
   );
 }
