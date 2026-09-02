@@ -1,3 +1,7 @@
+// frontend/lib/api.js
+
+import { clearAdminSession, clearPatientSession } from './auth';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 async function request(path, options = {}) {
@@ -14,6 +18,16 @@ async function request(path, options = {}) {
     data = await res.json();
   } catch {
     // بعض الردود (زي 204) ما فيهاش body
+  }
+
+  if (res.status === 401) {
+    // التوكن غير صالح/منتهي — نمسح الجلسة المناسبة ونحوّل للوجن
+    if (path.startsWith('/api/admin')) {
+      clearAdminSession();
+      if (typeof window !== 'undefined') window.location.href = '/admin/login';
+    } else {
+      clearPatientSession();
+    }
   }
 
   if (!res.ok) {
