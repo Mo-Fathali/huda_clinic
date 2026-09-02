@@ -20,6 +20,7 @@ router.get('/export', patientsController.exportPatients);
 router.post('/import', upload.single('file'), patientsController.importPatients);
 
 router.get('/', patientsController.getAllPatients);
+router.post('/', patientsController.createPatient);
 router.get('/:id', patientsController.getPatientById);
 router.put('/:id', patientsController.updatePatient);
 router.put('/:id/medical-record', patientsController.upsertMedicalRecord);
