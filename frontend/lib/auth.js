@@ -1,7 +1,33 @@
+// frontend/lib/auth.js
+
 const TOKEN_KEY = 'patient_token';
 const PATIENT_KEY = 'patient_data';
 const ADMIN_TOKEN_KEY = 'admin_token';
 const ADMIN_KEY = 'admin_data';
+
+// يفك تشفير الجزء الأوسط (payload) من الـ JWT بدون مكتبة خارجية
+function decodeJwtPayload(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+function isTokenValid(token) {
+  if (!token) return false;
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return false;
+  return payload.exp * 1000 > Date.now();
+}
 
 // ===== الزبون =====
 export function savePatientSession(token, patient) {
@@ -28,7 +54,7 @@ export function clearPatientSession() {
 }
 
 export function isPatientLoggedIn() {
-  return Boolean(getPatientToken());
+  return isTokenValid(getPatientToken());
 }
 
 // ===== الأدمن =====
@@ -56,5 +82,5 @@ export function clearAdminSession() {
 }
 
 export function isAdminLoggedIn() {
-  return Boolean(getAdminToken());
+  return isTokenValid(getAdminToken());
 }
