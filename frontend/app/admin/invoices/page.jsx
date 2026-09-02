@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { api, withAuth } from '@/lib/api';
 import { getAdminToken } from '@/lib/auth';
 
@@ -13,6 +13,12 @@ export default function AdminInvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
 
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsBoxRef = useRef(null);
+
+  const [syncNote, setSyncNote] = useState(null);
+
   function load() {
     setLoading(true);
     const token = getAdminToken();
@@ -24,6 +30,39 @@ export default function AdminInvoicesPage() {
   }
 
   useEffect(load, [statusFilter]);
+
+  // بحث في الحالات المسجلة أثناء الكتابة في حقل الاسم
+  useEffect(() => {
+    const query = form.patientName.trim();
+    if (!query || editingId) {
+      setSuggestions([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      const token = getAdminToken();
+      api
+        .get(`/api/admin/patients?search=${encodeURIComponent(query)}`, withAuth(token))
+        .then((results) => setSuggestions(results.slice(0, 5)))
+        .catch(() => setSuggestions([]));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [form.patientName, editingId]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (suggestionsBoxRef.current && !suggestionsBoxRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function selectSuggestion(patient) {
+    setForm({ ...form, patientName: patient.name || '', patientPhone: patient.phone || '' });
+    setShowSuggestions(false);
+    setSuggestions([]);
+  }
 
   function startEdit(inv) {
     setEditingId(inv.id);
@@ -40,6 +79,26 @@ export default function AdminInvoicesPage() {
   function cancelEdit() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setSyncNote(null);
+  }
+
+  // لو الاسم/الهاتف مش موجودين في سجلات الحالات، نضيفهم — بصمت، وبدون ما نمنع حفظ الفاتورة لو فشلت
+  async function syncPatientIfNeeded() {
+    const phone = form.patientPhone.trim();
+    if (!phone) return; // مفيش هاتف = مينفعش نعمل حالة (الهاتف معرّف فريد)
+
+    const token = getAdminToken();
+    try {
+      await api.post('/api/admin/patients', { name: form.patientName.trim(), phone }, withAuth(token));
+      setSyncNote({ type: 'success', message: 'تمت إضافة الاسم تلقائيًا لسجلات الحالات.' });
+    } catch (err) {
+      // 409 يعني الحالة موجودة بالفعل بنفس الرقم — طبيعي ومتوقع، مش خطأ
+      if (!err.message?.includes('موجود بالفعل')) {
+        setSyncNote({ type: 'error', message: `تم حفظ الفاتورة، لكن تعذّرت إضافتها لسجلات الحالات: ${err.message}` });
+      } else {
+        setSyncNote(null);
+      }
+    }
   }
 
   async function handleSubmit(e) {
@@ -50,6 +109,7 @@ export default function AdminInvoicesPage() {
         await api.put(`/api/admin/invoices/${editingId}`, form, withAuth(token));
       } else {
         await api.post('/api/admin/invoices', form, withAuth(token));
+        await syncPatientIfNeeded();
       }
       cancelEdit();
       load();
@@ -86,17 +146,49 @@ export default function AdminInvoicesPage() {
         </select>
       </div>
 
+      {syncNote && (
+        <div
+          className={`rounded-lg px-4 py-3 mb-4 text-sm ${
+            syncNote.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+          }`}
+        >
+          {syncNote.message}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-100 p-5 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input
-          type="text" placeholder="اسم المريضة" value={form.patientName}
-          onChange={(e) => setForm({ ...form, patientName: e.target.value })}
-          className="border border-gray-300 rounded-lg px-3 py-2" required
-        />
-        <input
-          type="text" placeholder="رقم الهاتف (اختياري)" value={form.patientPhone}
-          onChange={(e) => setForm({ ...form, patientPhone: e.target.value })}
-          className="border border-gray-300 rounded-lg px-3 py-2" dir="ltr"
-        />
+        <div className="relative" ref={suggestionsBoxRef}>
+          <input
+            type="text" placeholder="اسم المريضة" value={form.patientName}
+            onChange={(e) => setForm({ ...form, patientName: e.target.value })}
+            onFocus={() => setShowSuggestions(true)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2" required
+            autoComplete="off"
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg text-sm overflow-hidden">
+              {suggestions.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => selectSuggestion(p)}
+                    className="w-full text-right px-3 py-2 hover:bg-soft transition flex justify-between items-center"
+                  >
+                    <span className="font-medium text-ink">{p.name || '—'}</span>
+                    <span className="text-gray-400 text-xs" dir="ltr">{p.phone}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <input
+            type="text" placeholder="رقم الهاتف (اختياري)" value={form.patientPhone}
+            onChange={(e) => setForm({ ...form, patientPhone: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2" dir="ltr"
+          />
+        </div>
         <input
           type="text" placeholder="الوصف (اختياري)" value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -119,6 +211,11 @@ export default function AdminInvoicesPage() {
           onChange={(e) => setForm({ ...form, date: e.target.value })}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
+        <div className="sm:col-span-2 -mt-2">
+          <p className="text-xs text-gray-400">
+            لو الرقم مش مسجّل في "سجلات الحالات"، هيتضاف تلقائيًا عند حفظ فاتورة جديدة.
+          </p>
+        </div>
         <div className="flex gap-2 sm:col-span-2">
           <button type="submit" className="bg-rose text-white rounded-lg px-5 py-2 hover:opacity-90 transition">
             {editingId ? 'حفظ التعديل' : 'إضافة فاتورة'}
