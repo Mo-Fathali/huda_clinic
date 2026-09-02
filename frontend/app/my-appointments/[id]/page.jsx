@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api, withAuth } from '@/lib/api';
 import { getPatientToken, isPatientLoggedIn } from '@/lib/auth';
 import Toast from '@/components/ui/Toast';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 
 const STATUS_LABELS = {
@@ -31,6 +32,7 @@ export default function AppointmentDetailPage() {
   const [error, setError] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [toast, setToast] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!isPatientLoggedIn()) {
@@ -52,7 +54,7 @@ export default function AppointmentDetailPage() {
   }, [toast]);
 
   async function handleCancel() {
-    if (!confirm('هل أنتِ متأكدة من إلغاء هذا الموعد؟')) return;
+    setConfirmOpen(false);
     setCancelling(true);
     try {
       const token = getPatientToken();
@@ -136,7 +138,7 @@ export default function AppointmentDetailPage() {
           {canCancel && (
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={() => setConfirmOpen(true)}
               disabled={cancelling}
               className="w-full mt-4 bg-red-50 text-red-700 rounded-lg py-3 font-semibold hover:bg-red-100 transition disabled:opacity-50"
             >
@@ -145,6 +147,16 @@ export default function AppointmentDetailPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="تأكيد الإلغاء"
+        message="هل أنتِ متأكدة من إلغاء هذا الموعد؟"
+        confirmLabel="نعم، إلغاء"
+        cancelLabel="تراجع"
+        onConfirm={handleCancel}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </main>
