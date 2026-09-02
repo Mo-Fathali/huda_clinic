@@ -20,7 +20,7 @@ async function exportAllData() {
     prisma.availability.findMany(),
     prisma.blockedSlot.findMany(),
     prisma.medicalRecord.findMany(),
-    prisma.adminUser.findMany(),
+    
   ]);
 
   return {
