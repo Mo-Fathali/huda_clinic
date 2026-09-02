@@ -1,6 +1,12 @@
+// backend/src/controllers/patients.controller.js
+
 const prisma = require('../config/db');
 
 const excelService = require('../services/excel.service');
+
+function isValidPhone(phone) {
+  return /^\+?[0-9]{8,15}$/.test(phone);
+}
 
 // GET /api/admin/patients?search=&filter=all|blacklisted|active
 exports.getAllPatients = async (req, res) => {
@@ -35,6 +41,37 @@ exports.getAllPatients = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'حدث خطأ أثناء جلب الحالات' });
+  }
+};
+
+// POST /api/admin/patients   body: { name, phone }  → إضافة حالة يدويًا
+exports.createPatient = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ error: 'رقم الهاتف مطلوب' });
+    }
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({ error: 'رقم الهاتف غير صحيح' });
+    }
+
+    const existing = await prisma.patient.findUnique({ where: { phone } });
+    if (existing) {
+      return res.status(409).json({ error: 'يوجد بالفعل حالة بنفس رقم الهاتف', patientId: existing.id });
+    }
+
+    const patient = await prisma.patient.create({
+      data: {
+        phone,
+        name: name?.trim() || '',
+      },
+    });
+
+    res.status(201).json(patient);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'حدث خطأ أثناء إضافة الحالة' });
   }
 };
 
